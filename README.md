@@ -35,6 +35,7 @@ The **PyC** (Python-to-C) language has a simplified, Python-inspired syntax:
 - Testing: Bash / CTest
 
 ---
+'''
 ## Project Structure 
 pyc-compiler/
 ├── src/            # compiler source code
@@ -46,3 +47,5 @@ pyc-compiler/
 ├── docs/           # documentation and thesis notes
 ├── .gitignore
 └── README.md
+'''
+---
