@@ -1,0 +1,37 @@
+
+        UPROSZCZONE DZIALANIE 
+
+Lexer - sluzy do analizy leksykalnej 
+        - czyta znaki z pliku i sklada je w tokeny -> INDENT , NUM, PLUS IF 
+        - wejscie teskty | wyjscie lista tokenow
+Parser - analiza skladni 
+        - z listy tokenow buduje drzewo syntaxu AST - abstract syntax tree 
+        - zmnienia strukture wejscia w celu latwieszego przetwozenia 
+Code generator - generacja kodu C 
+        - buduje kod wynikowy  
+        -wejscie | AST , wyjscie | kod C 
+
+        ZALOZENIA 
+Skladnia jezyka python like -  jak najbardziej zlizona do jezyka angielskiego lub pseudokodu 
+
+Proste komendy typu if else while jak najwiecej z math basic regex petle i podstawowe struktury danych 
+
+w celu samonauki i nauki podstaw jezyka c oraz kompilacji i dzialania kompitalorow/interpreterow 
+
+
+proto main i todo  
+
+main()
+  ├─ lexer()
+  ├─ tokenize()
+  │    └─ next_token() (w pętli)
+  ├─ parse_program()
+  │    ├─ parse_func()
+  │    │    ├─ parse_block()
+  │    │    │    └─ parse_stmt()
+  │    │    │         └─ parse_expr()
+  ├─ generate_c_code()
+  │    └─ gen_node() → (rekurencja po AST)
+  └─ system("gcc ...") 
+
+
