@@ -1,4 +1,7 @@
-# 🧠 PyC Compiler — A Simple Programming Language Compiler in C
+## 🐍 WooLang — Python-like language compiled to C
+
+WooLang is a simple educational programming language inspired by Python,  
+designed to be compiled into pure C.  
 
 > **Author:** Damian Łuczak  
 > **University:** Uczelnia Techniczno-Handlowa im. Heleny Chodkowskiej in Warsaw
