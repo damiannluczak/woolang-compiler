@@ -25,7 +25,7 @@ The **PyC** (Python-to-C) language has a simplified, Python-inspired syntax:
 - Comments: `# comment`
 - Supported statements: `if`, `elif`, `else`, `while`, `def`, `return`, `print`
 - All variables are of type `int` (in the MVP version)
-- The compiler translates `.pyc` source files into equivalent C code that can be compiled with GCC.
+- The compiler translates `.woo` source files into equivalent C code that can be compiled with GCC.
 
 ---
 
