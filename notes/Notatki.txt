@@ -29,9 +29,8 @@ main()
   │    ├─ parse_func()
   │    │    ├─ parse_block()
   │    │    │    └─ parse_stmt()
-  │    │    │         └─ parse_expr()
+  │    │    │         └─ parse.  _expr()
   ├─ generate_c_code()
   │    └─ gen_node() → (rekurencja po AST)
   └─ system("gcc ...") 
-
 
