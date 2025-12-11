@@ -26,8 +26,13 @@ void build_and_run()
     // gcc ... ""
 }
 
-int main()
-{
-    lexer();
+int main(int argc, char ** argv){
+    if (argc < 2) {
+        fprintf(stderr, "Uzycie: %s <sciezka_do_pliku\n", argv[0]);
+        return 1;
+    }
+
+    lexer(argv[1]);
+    
     return 0;
 }
