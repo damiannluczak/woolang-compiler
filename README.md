@@ -45,8 +45,12 @@ pyc-compiler/
 │   ├── main.c
 ├── runtime/        # small standard library (e.g., print)
 │   └── io.c
-├── samples/        # example PyC programs
-│   └── hello.pyc
+├── tests/        # tests for woolang
+│   └── lexer/
+|   |     └── input 
+|   |     └── output 
+|   |     └── tmp 
+│   └── parser
 ├── docs/           # documentation and thesis notes
 ├── .gitignore
 └── README.md

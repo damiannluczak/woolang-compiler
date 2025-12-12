@@ -25,7 +25,7 @@ void lexer(const char *path)
     char num[50];
     int n = 0;
 
-    printf("Plik zawiera: \n");
+   // printf("Plik zawiera: \n");
 
     while (1)
     {
@@ -98,40 +98,40 @@ void lexer(const char *path)
                 switch (ch)
                 {
                 case '+':
-                    printf("PLUS: %c\n", ch);
+                    printf("PLUS\n");
                     break;
                 case ':':
-                    printf("COLON: %c\n",ch);
+                    printf("COLON\n");
                     break;
                 case '-':
-                    printf("MINUS: %c\n", ch);
+                    printf("MINUS\n");
                     break;
                 case '(':
-                    printf("LPAREN: %c\n", ch);
+                    printf("LPAREN\n");
                     break;
                 case ')':
-                    printf("RPAREN: %c\n", ch);
+                    printf("RPAREN\n");
                     break;
                 case '[':
-                    printf("LBRACKET: %c\n", ch);
+                    printf("LBRACKET\n");
                     break;
                 case ']':
-                    printf("RBRACKET: %c\n", ch);
+                    printf("RBRACKET\n");
                     break;
                 case '{':
-                    printf("LBRACE: %c\n", ch);
+                    printf("LBRACE\n");
                     break;
                 case '}':
-                    printf("RBRACE: %c\n", ch);
+                    printf("RBRACE\n");
                     break;
                 case '/':
-                    printf("SLASH: %c\n", ch);
+                    printf("SLASH\n");
                     break;
                 case ',':
-                    printf("COMMA: %c\n", ch);
+                    printf("COMMA\n");
                     break;
                 case '.':
-                    printf("DOT: %c\n", ch);
+                    printf("DOT\n");
                     break;
                 // arthmetic operators 
                 case '=':
@@ -210,9 +210,11 @@ void lexer(const char *path)
         else
             printf("IDENT(%s)\n", res);
     }
-    printf("\n");
+
+   /* printf("\n");
     printf("\nA:%d D:%d S:%d P:%d\n", alpha, digit, space, punct);
     printf("\n");
+    */
 
     fclose(test);
     
