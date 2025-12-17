@@ -3,7 +3,22 @@
 #include <string.h>
 #include "lexer.h"
 
-void lexer(const char *path)
+
+static void push_token(
+    Token * tokens,
+    int * token_count,
+    TokenType type,
+    const char *text
+) {
+    if (*token_count >= MAX_TOKENS) return;
+
+    tokens[*token_count].type = type;
+    strncpy(tokens[*token_count].text, text, MAX_TOKEN_LEN - 1);
+    tokens[*token_count].text[MAX_TOKEN_LEN - 1] = '\0';
+    (*token_count) ++;
+}
+
+void lexer(const char *path, Token *tokens, int *token_count)
 {
     FILE *test;
     test = fopen(path, "r");
@@ -49,17 +64,19 @@ void lexer(const char *path)
                 res[i] = '\0';
 
                 if (strcmp(res, "if") == 0)
-                    printf("KEYWORD(IF)\n");
+                    push_token(tokens, token_count, TOKEN_IF, "");
                 else if (strcmp(res, "else") == 0)
-                    printf("KEYWORD(ELSE)\n");
+                    push_token(tokens, token_count, TOKEN_ELSE, "");
                 else if (strcmp(res, "while") == 0)
-                    printf("KEYWORD(WHILE)\n");
+                    push_token(tokens, token_count, TOKEN_WHILE, "");
                 else if (strcmp(res, "print") == 0)
-                    printf("KEYWORD(PRINT)\n");
+                    push_token(tokens, token_count, TOKEN_PRINT, "");
                 else if (strcmp(res, "return") == 0)
-                    printf("KEYWORD(RETURN)\n");
-                else
-                    printf("IDENT(%s)\n", res);
+                    push_token(tokens, token_count, TOKEN_RETURN, "");
+                else { 
+                    push_token(tokens, token_count, TOKEN_IDENT, res); 
+                }
+    
 
                 i = 0;
                 ungetc(ch, test);
@@ -78,7 +95,7 @@ void lexer(const char *path)
                         num[n++] = (char)ch;
                 }
                 num[n] = '\0';
-                printf("NUMBER(%s)\n", num);
+                push_token(tokens, token_count, TOKEN_NUMBER, num);
 
                 if (ch != EOF)
                     ungetc(ch, test);
@@ -88,7 +105,7 @@ void lexer(const char *path)
             {
                 if (ch == '\n')
                 {
-                    printf("NEWLINE\n");
+                    push_token(tokens, token_count, TOKEN_NEWLINE, "\\n");
                     continue;
                 }
                 continue;
@@ -98,40 +115,40 @@ void lexer(const char *path)
                 switch (ch)
                 {
                 case '+':
-                    printf("PLUS\n");
+                    push_token(tokens, token_count, TOKEN_PLUS, "+");
                     break;
                 case ':':
-                    printf("COLON\n");
+                    push_token(tokens, token_count, TOKEN_COLON, ":");
                     break;
                 case '-':
-                    printf("MINUS\n");
+                    push_token(tokens, token_count, TOKEN_MINUS, "-");
                     break;
                 case '(':
-                    printf("LPAREN\n");
+                    push_token(tokens, token_count, TOKEN_LPAREN, "(");
                     break;
                 case ')':
-                    printf("RPAREN\n");
+                    push_token(tokens, token_count, TOKEN_RPAREN, ")");
                     break;
                 case '[':
-                    printf("LBRACKET\n");
+                    push_token(tokens, token_count, TOKEN_LBRACKET, "[");
                     break;
                 case ']':
-                    printf("RBRACKET\n");
+                    push_token(tokens, token_count, TOKEN_RBRACKET, "]");
                     break;
                 case '{':
-                    printf("LBRACE\n");
+                    push_token(tokens, token_count, TOKEN_LBRACE, "{");
                     break;
                 case '}':
-                    printf("RBRACE\n");
+                    push_token(tokens, token_count, TOKEN_RBRACE, "}");
                     break;
                 case '/':
-                    printf("SLASH\n");
+                    push_token(tokens, token_count, TOKEN_SLASH, "/");
                     break;
                 case ',':
-                    printf("COMMA\n");
+                    push_token(tokens, token_count, TOKEN_COMMA, ",");
                     break;
                 case '.':
-                    printf("DOT\n");
+                    push_token(tokens, token_count, TOKEN_DOT, ".");
                     break;
                 // arthmetic operators 
                 case '=':
@@ -139,12 +156,12 @@ void lexer(const char *path)
                     int next = fgetc(test);
                     if (next == '=')
                     {
-                        printf("EQEQ\n");
+                        push_token(tokens, token_count, TOKEN_EQEQ, "==");
                     }
                     else
                     {
                         ungetc(next, test);
-                        printf("EQ\n");
+                        push_token(tokens, token_count, TOKEN_EQ, "=");
                     }
                     break;
                 }
@@ -153,12 +170,12 @@ void lexer(const char *path)
                     int next = fgetc(test);
                     if (next == '=')
                     {
-                        printf("LE\n");
+                        push_token(tokens, token_count, TOKEN_LE, "<=");
                     }
                     else
                     {
                         ungetc(next, test);
-                        printf("LT\n");
+                        push_token(tokens, token_count, TOKEN_LT, "<");
                     }
                     break;
                 }
@@ -167,12 +184,12 @@ void lexer(const char *path)
                     int next = fgetc(test);
                     if (next == '=')
                     {
-                        printf("GE\n");
+                        push_token(tokens, token_count, TOKEN_GE, ">=");
                     }
                     else
                     {
                         ungetc(next, test);
-                        printf("GT\n");
+                        push_token(tokens, token_count, TOKEN_GT, ">");
                     }
                     break;
                 }
@@ -181,13 +198,16 @@ void lexer(const char *path)
                     int next = fgetc(test);
                     if (next == '=')
                     {
-                        printf("NEQ\n");
+                        push_token(tokens, token_count, TOKEN_NEQ, "!=");
                     }
                     break; 
                 }
 
-                default:
-                    printf("PUNCTUATION: %c\n", ch);
+                default: {
+                    char tmp[2] = {(char)ch, '\0'};
+                    push_token(tokens, token_count, TOKEN_UNKNOWN, tmp);
+                    break;
+                }
                 }
                 punct += 1;
             }
@@ -198,23 +218,25 @@ void lexer(const char *path)
         res[i] = '\0';
 
         if (strcmp(res, "if") == 0)
-            printf("KEYWORD(IF)\n");
+            push_token(tokens, token_count, TOKEN_IF, "");
         else if (strcmp(res, "else") == 0)
-            printf("KEYWORD(ELSE)\n");
+            push_token(tokens, token_count, TOKEN_ELSE, "");
         else if (strcmp(res, "while") == 0)
-            printf("KEYWORD(WHILE)\n");
+            push_token(tokens, token_count, TOKEN_WHILE, "");
         else if (strcmp(res, "print") == 0)
-            printf("KEYWORD(PRINT)\n");
+            push_token(tokens, token_count, TOKEN_PRINT, "");
         else if (strcmp(res, "return") == 0)
-            printf("KEYWORD(RETURN)\n");
+             push_token(tokens, token_count, TOKEN_RETURN, "");
         else
-            printf("IDENT(%s)\n", res);
+            push_token(tokens, token_count, TOKEN_IDENT, res);
     }
 
    /* printf("\n");
     printf("\nA:%d D:%d S:%d P:%d\n", alpha, digit, space, punct);
     printf("\n");
     */
+
+     push_token(tokens, token_count, TOKEN_EOF, "");
 
     fclose(test);
     
