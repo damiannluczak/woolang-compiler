@@ -47,6 +47,8 @@ typedef struct {
     char text[MAX_TOKEN_LEN];
 } Token;
 
+
+
 void lexer(const char *path, Token *tokens, int *token_count);
 
 #endif

@@ -3,7 +3,6 @@
 #include <string.h>
 #include "lexer.h"
 
-
 static void push_token(
     Token * tokens,
     int * token_count,
@@ -17,6 +16,7 @@ static void push_token(
     tokens[*token_count].text[MAX_TOKEN_LEN - 1] = '\0';
     (*token_count) ++;
 }
+const char *token_type_name(TokenType t);
 
 void lexer(const char *path, Token *tokens, int *token_count)
 {
