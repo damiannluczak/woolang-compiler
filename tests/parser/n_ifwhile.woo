@@ -1,0 +1,7 @@
+x = 0
+
+if x < 10:
+    while x < 3:
+        x = x + 1
+
+return x
