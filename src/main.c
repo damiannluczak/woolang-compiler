@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "lexer.h"
 #include "parser.h"
+#include "ast.h"
 
 int main(int argc, char **argv){
     if (argc < 2) {
@@ -19,7 +20,7 @@ int main(int argc, char **argv){
         .pos    = 0
     };
 
-    parse_program(&ts);
-    printf("OK: parsed successfully\n");
+    Node *root = parse_program(&ts);
+    ast_print(root, 0);
     return 0;
 }

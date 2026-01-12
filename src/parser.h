@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "lexer.h"
+#include "ast.h"
 
 typedef struct {
     Token *tokens;
@@ -9,6 +10,6 @@ typedef struct {
     int pos;
 } TokenStream;
 
-void parse_program(TokenStream *ts);
+Node *parse_program(TokenStream *ts);
 
 #endif

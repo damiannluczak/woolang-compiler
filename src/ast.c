@@ -53,4 +53,21 @@ Node *new_while(Node *cond, Node *body){
     return n;
 }
 
+Node *new_block(Node *first_stmt){
+    Node *n = node_alloc(NODE_BLOCK);
+    n->body = first_stmt;
+    return n;
+}
+
+Node *new_return(Node *expr){
+    Node *n = node_alloc(NODE_RETURN);
+    n->body = expr;
+    return n;
+}
+
+Node * new_print(Node *expr){
+    Node *n = node_alloc(NODE_PRINT);
+    n->body = expr;
+    return n;
+}
 

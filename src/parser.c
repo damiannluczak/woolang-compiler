@@ -135,30 +135,36 @@ static Node *parse_condition(TokenStream *ts){
 }
 
 static Node *parse_if(TokenStream *ts){
+
     expect(ts, TOKEN_IF, "expected 'if'");
-    parse_condition(ts);
+
+    Node *cond = parse_condition(ts);
+
     expect(ts, TOKEN_COLON, "expected ':' after condition");
     expect(ts, TOKEN_NEWLINE, "expected newline after ':'");
 
-    parse_block(ts);
+    Node *then_body = parse_block(ts);
+
+    Node *else_body = NULL;
 
     if (peek(ts) -> type == TOKEN_ELSE){
         expect(ts, TOKEN_ELSE, "expected 'else' ");
         expect(ts, TOKEN_COLON, "expected ':' after else ");
         expect(ts, TOKEN_NEWLINE, " expected newline after else ':' ");
-        parse_block(ts);
+
+        else_body = parse_block(ts);
     }
-    return NULL;
+    return new_if(cond, then_body,else_body);
 }
 
 static Node *parse_while(TokenStream *ts){
     expect(ts, TOKEN_WHILE, "expected 'while' ");
-    parse_condition(ts);
+    Node *cond = parse_condition(ts);
     expect(ts, TOKEN_COLON, "expected ':' after condition");
     expect(ts, TOKEN_NEWLINE, " expected newline after ':'");
 
-    parse_block(ts);
-    return NULL;
+    Node *body = parse_block(ts);
+    return new_while(cond,body);
 }
 
 
@@ -168,18 +174,19 @@ static Node* parse_stmt(TokenStream *ts){
 
     switch (t->type){
         case TOKEN_IF:
-            parse_if(ts);
             return parse_if(ts);
 
-        case TOKEN_RETURN:
+        case TOKEN_RETURN: {
             expect(ts, TOKEN_RETURN, "expected 'return'");
-            parse_expr(ts);
-            return NULL;
+            Node *expr = parse_expr(ts);
+            return new_return(expr);
+        }
 
-        case TOKEN_PRINT:
+        case TOKEN_PRINT: {
             expect(ts, TOKEN_PRINT, "expected 'print'");
-            parse_expr(ts);
-            return NULL;
+            Node *expr = parse_expr(ts);
+            return new_print(expr);
+        }
 
         case TOKEN_IDENT: {
             Token *id = advance(ts);
@@ -189,7 +196,8 @@ static Node* parse_stmt(TokenStream *ts){
 
             return new_assign(lhs, rhs);
         }
-        case TOKEN_WHILE:{
+
+        case TOKEN_WHILE: {
             expect(ts, TOKEN_WHILE, "expected 'while' ");
             Node *cond = parse_condition(ts);
             expect(ts, TOKEN_COLON, "expected ':' ");
@@ -201,44 +209,57 @@ static Node* parse_stmt(TokenStream *ts){
         default:
             fprintf(stderr, "Parser error: unexpected token %s\n", token_type_name(t->type));
             exit(1);
-        // TODO: IDENT '=' 
     }
 
     while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
 }
 
 static Node *parse_block(TokenStream *ts){
+    Node *first = NULL;
+    Node *last = NULL;
+
     while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
 
     while (1){
-        Token *t = peek(ts);
+        TokenType tt = peek(ts)->type;
+        if (tt == TOKEN_ELSE || tt == TOKEN_EOF) break;
 
-        if (t->type == TOKEN_ELSE || t->type == TOKEN_EOF) break;
-
-        if (t->type == TOKEN_IF || t->type == TOKEN_WHILE ||
-            t->type == TOKEN_RETURN || t->type == TOKEN_PRINT ||
-            t->type == TOKEN_IDENT) {
-
-            parse_stmt(ts);
-            while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
-        } else {
+        if (!(tt == TOKEN_IF || tt == TOKEN_WHILE ||
+              tt == TOKEN_RETURN || tt == TOKEN_PRINT ||
+              tt == TOKEN_IDENT)) {
             break;
         }
-        return NULL;
+
+        Node *stmt = parse_stmt(ts);
+
+        if (!first) first = stmt; else last->next = stmt;
+
+        last = stmt;
+
+        while (peek(ts)->type ==  TOKEN_NEWLINE) advance(ts);
+
     }
-    return NULL;
+    return new_block(first);
 }
 
-void parse_program(TokenStream *ts){
+Node *parse_program(TokenStream *ts){
+    Node *first = NULL;
+    Node *last = NULL;
+
     while (peek(ts)->type == TOKEN_NEWLINE) {
         advance(ts);
     }
 
     while (peek(ts)->type != TOKEN_EOF) {
-        parse_stmt(ts);
+        Node * stmt = parse_stmt(ts);
+
+        if (!first) first = stmt; else last->next = stmt;
+
+        last = stmt;
 
         while (peek(ts)->type == TOKEN_NEWLINE) {
             advance(ts);
         }
     }
+    return new_block(first);
 }

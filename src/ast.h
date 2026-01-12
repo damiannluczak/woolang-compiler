@@ -34,9 +34,16 @@ typedef struct Node {
     struct Node *next;
 } Node;
 
+void ast_print(Node *n, int indent);
+
 Node *new_literal(int v);
 Node *new_ident(const char *s);
 Node *new_binop(TokenType op, Node *l, Node *r);
+
+Node *new_if(Node *cond, Node *body, Node *else_body);
+Node *new_block(Node *first_stmt);
+Node *new_print(Node *expr);
+Node *new_return(Node *expr);
 
 Node * new_assign(Node *l, Node *r);
 Node * new_while(Node *cond, Node *body);
