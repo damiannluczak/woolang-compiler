@@ -61,13 +61,19 @@ void ast_print(Node *n, int indent) {
     // --- dzieci / wnętrze ---
     switch (n->type) {
         case NODE_ASSIGN:
-            ast_print(n->left, indent + 2);
-            ast_print(n->right, indent + 2);
+            indent_spaces(indent + 2); printf("lhs:\n");
+            ast_print(n->left, indent + 4);
+
+            indent_spaces(indent + 2); printf("rhs:\n");
+            ast_print(n->right, indent + 4);
             break;
 
         case NODE_BINOP:
-            ast_print(n->left, indent + 2);
-            ast_print(n->right, indent + 2);
+            indent_spaces(indent + 2); printf("lhs:\n");
+            ast_print(n->left, indent + 4);
+
+            indent_spaces(indent + 2); printf("rhs:\n");
+            ast_print(n->right, indent + 4);
             break;
 
         case NODE_IF:

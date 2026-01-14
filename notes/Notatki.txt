@@ -34,3 +34,39 @@ main()
   │    └─ gen_node() → (rekurencja po AST)
   └─ system("gcc ...") 
 
+
+IF
+ELSE
+WHILE
+PRINT
+RETURN
+IDENT
+NUMBER
+NEWLINE
+PLUS
+COLON
+MINUS
+LPAREN
+RPAREN
+LBRACKET
+RBRACKET
+LBRACE
+RBRACE
+SLASH
+COMMA
+DOT
+
+EQEQ
+EQ
+
+LE
+LT
+GE
+GT
+
+NEQ
+
+UNKNOWN 
+ERROR
+
+EOF
