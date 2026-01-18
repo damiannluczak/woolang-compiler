@@ -99,6 +99,38 @@ EvalResult eval(Node *n, Env *env){
                 return res;
             }
         }
+        case NODE_WHILE: {
+            while(1){
+                EvalResult cond = eval(n->cond, env);
+                if (cond.has_return) return cond;
+
+                if (cond.value == 0){
+                    res.value = 0;
+                    res.has_return = 0;
+                    return res;
+                }
+                EvalResult body = eval(n->body, env);
+                if (body.has_return) return body;
+            }
+        }
+
+        case NODE_PRINT: {
+            EvalResult v = eval(n->body, env);
+            if (v.has_return) return v;
+
+            printf("%d\n", v.value);
+
+            res.value = v.value;
+            return res;
+        }
+
+        case NODE_RETURN: {
+            EvalResult v = eval(n->body, env);
+            v.has_return = 1;
+            return v;
+        }
+
+
 
 
         default:

@@ -13,6 +13,8 @@ static const char *token_type_name(TokenType t){
         case TOKEN_IDENT: return "IDENT";
         case TOKEN_NUMBER: return "NUMBER";
         case TOKEN_NEWLINE: return "NEWLINE";
+        case TOKEN_INDENT: return "INDENT";
+        case TOKEN_DEDENT: return "DEDENT";
         case TOKEN_PLUS: return "PLUS";
         case TOKEN_MINUS: return "MINUS";
         case TOKEN_COLON: return "COLON";
@@ -230,8 +232,43 @@ static Node *parse_block(TokenStream *ts){
     Node *first = NULL;
     Node *last = NULL;
 
+    // zjedz puste linie
     while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
 
+    // jeśli mamy INDENT -> to jest prawdziwy blok wcięty (python style)
+    if (peek(ts)->type == TOKEN_INDENT) {
+        advance(ts); // consume INDENT
+
+        while (1) {
+            TokenType tt = peek(ts)->type;
+
+            // koniec wciętego bloku
+            if (tt == TOKEN_DEDENT) {
+                advance(ts); // consume DEDENT
+                break;
+            }
+
+            // bezpieczeństwo
+            if (tt == TOKEN_EOF) break;
+
+            // pomijaj puste linie w środku bloku
+            if (tt == TOKEN_NEWLINE) {
+                advance(ts);
+                continue;
+            }
+
+            Node *stmt = parse_stmt(ts);
+            if (!first) first = stmt;
+            else last->next = stmt;
+            last = stmt;
+
+            while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
+        }
+
+        return new_block(first);
+    }
+
+    // fallback: stary tryb (bez indentów) – zostawiamy dla kompatybilności
     while (1){
         TokenType tt = peek(ts)->type;
         if (tt == TOKEN_ELSE || tt == TOKEN_EOF) break;
@@ -245,12 +282,11 @@ static Node *parse_block(TokenStream *ts){
         Node *stmt = parse_stmt(ts);
 
         if (!first) first = stmt; else last->next = stmt;
-
         last = stmt;
 
-        while (peek(ts)->type ==  TOKEN_NEWLINE) advance(ts);
-
+        while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
     }
+
     return new_block(first);
 }
 
@@ -258,9 +294,9 @@ Node *parse_program(TokenStream *ts){
     Node *first = NULL;
     Node *last = NULL;
 
-    while (peek(ts)->type == TOKEN_NEWLINE) {
-        advance(ts);
-    }
+    while (peek(ts)->type == TOKEN_NEWLINE || peek(ts)->type == TOKEN_DEDENT) {
+    advance(ts);
+}
 
     while (peek(ts)->type != TOKEN_EOF) {
         Node * stmt = parse_stmt(ts);
@@ -269,9 +305,9 @@ Node *parse_program(TokenStream *ts){
 
         last = stmt;
 
-        while (peek(ts)->type == TOKEN_NEWLINE) {
-            advance(ts);
-        }
+        while (peek(ts)->type == TOKEN_NEWLINE || peek(ts)->type == TOKEN_DEDENT) {
+    advance(ts);
+}
     }
     return new_block(first);
 }

@@ -12,7 +12,10 @@ typedef enum {
     TOKEN_RETURN,
     TOKEN_IDENT,
     TOKEN_NUMBER,
+
     TOKEN_NEWLINE,
+    TOKEN_INDENT,
+    TOKEN_DEDENT,
     
     TOKEN_PLUS,
     TOKEN_MINUS,
