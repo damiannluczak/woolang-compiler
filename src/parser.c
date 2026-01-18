@@ -63,6 +63,10 @@ static Token *advance(TokenStream *ts){
     if (ts->pos < ts->count) ts->pos++;
     return t;
 }
+static Token *peek_next(TokenStream *ts){
+    if (ts->pos + 1 >= ts->count) return &EOF_TOKEN;
+    return &ts->tokens[ts->pos + 1];
+}
 
 static Token *expect(TokenStream *ts, TokenType type, const char *msg){
     Token *t = peek(ts);
@@ -100,7 +104,7 @@ static Node *parse_atom(TokenStream *ts){
 }
 
 
-static Node *parse_expr(TokenStream * ts){
+static Node *parse_add(TokenStream * ts){
     Node *left = parse_atom(ts);
     while (1){
         TokenType op = peek(ts)->type;
@@ -116,22 +120,24 @@ static Node *parse_expr(TokenStream * ts){
     }
     return left;
 }
-
-static Node *parse_condition(TokenStream *ts){
-    Node *lhs = parse_expr(ts);
+static Node *parse_expr(TokenStream *ts){
+    Node *left = parse_add(ts);
 
     TokenType op = peek(ts)->type;
     if (op == TOKEN_LT || op == TOKEN_LE ||
-        op == TOKEN_GE || op == TOKEN_GT ||
+        op == TOKEN_GT || op == TOKEN_GE ||
         op == TOKEN_EQEQ || op == TOKEN_NEQ) {
+
         advance(ts);
-    } else {
-        fprintf(stderr, "Syntax error: expected comparison operator\n");
-        fprintf(stderr, "Got token: %s\n", token_type_name(op));
-        exit(1);
+        Node *right = parse_add(ts);
+        left = new_binop(op, left, right);
     }
-    Node *rhs = parse_expr(ts);
-    return new_binop(op, lhs ,rhs);
+
+    return left;
+}
+
+static Node *parse_condition(TokenStream *ts){
+    return parse_expr(ts);
 }
 
 static Node *parse_if(TokenStream *ts){
@@ -189,6 +195,12 @@ static Node* parse_stmt(TokenStream *ts){
         }
 
         case TOKEN_IDENT: {
+        // sprawdzczy to assignment
+            if (peek_next(ts)->type != TOKEN_EQ) {
+        // zwykłe wyrazenie
+            return parse_expr(ts);
+            }
+
             Token *id = advance(ts);
             expect(ts, TOKEN_EQ, "expected '='");
             Node *rhs = parse_expr(ts);

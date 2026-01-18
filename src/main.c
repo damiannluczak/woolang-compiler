@@ -2,6 +2,8 @@
 #include "lexer.h"
 #include "parser.h"
 #include "ast.h"
+#include "env.h"
+#include "eval.h"
 
 int main(int argc, char **argv){
     if (argc < 2) {
@@ -22,5 +24,13 @@ int main(int argc, char **argv){
 
     Node *root = parse_program(&ts);
     ast_print(root, 0);
+
+    Env env;
+    env_init(&env);
+
+    EvalResult r = eval(root,&env);
+    
+    printf("Program result = %d\n", r.value);
+    
     return 0;
 }
