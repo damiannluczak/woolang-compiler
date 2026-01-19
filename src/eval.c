@@ -23,6 +23,7 @@ EvalResult eval(Node *n, Env *env){
 
         case NODE_ASSIGN: {
             EvalResult rhs = eval(n->right, env);
+            if (rhs.has_return) return rhs;
 
             if (!n->left || n->left->type != NODE_IDENT){
                 fprintf(stderr, "eval: left side of assignment must be identifier\n");
@@ -92,25 +93,31 @@ EvalResult eval(Node *n, Env *env){
             if (c.has_return) return c;
 
             if (c.value) {
-                return eval(n->body, env); 
-            } else if (n->else_body) {
-                return eval(n->else_body,env);
-            } else {
-                return res;
+                EvalResult then_res = eval(n->body,env);
+                return then_res;
+
+            } 
+            if (n->else_body){
+                EvalResult else_res = eval(n->else_body,env);
+                return else_res;
             }
+            return res;
         }
+        
         case NODE_WHILE: {
+            EvalResult last;
+            last.value = 0;
+            last.has_return = 0;
+
             while(1){
                 EvalResult cond = eval(n->cond, env);
                 if (cond.has_return) return cond;
 
                 if (cond.value == 0){
-                    res.value = 0;
-                    res.has_return = 0;
-                    return res;
+                    return last;
                 }
-                EvalResult body = eval(n->body, env);
-                if (body.has_return) return body;
+                last = eval(n->body, env);
+                if (last.has_return) return last;
             }
         }
 
@@ -137,4 +144,5 @@ EvalResult eval(Node *n, Env *env){
             fprintf(stderr, "eval: unsupported node type %d\n", n->type);
             exit(1);
     }
+    return res;
 }

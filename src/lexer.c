@@ -72,7 +72,7 @@ void lexer(const char *path, Token *tokens, int *token_count) {
             break;
         }
 
-        // --- obsługa indentacji tylko na początku linii ---
+        // --- obsluga indentacji przy poczatku linii ---
         if (at_line_start) {
             int spaces = 0;
 
@@ -101,7 +101,7 @@ void lexer(const char *path, Token *tokens, int *token_count) {
                 break;
             }
 
-            // wymagamy wielokrotności 4
+            // spcja x4
             if (spaces % 4 != 0) lex_error("Indentation must be multiple of 4 spaces");
 
             int new_indent = spaces;

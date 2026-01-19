@@ -69,6 +69,10 @@ static Token *peek_next(TokenStream *ts){
     if (ts->pos + 1 >= ts->count) return &EOF_TOKEN;
     return &ts->tokens[ts->pos + 1];
 }
+static void skip_newlines(TokenStream *ts) {
+    while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
+}
+
 
 static Token *expect(TokenStream *ts, TokenType type, const char *msg){
     Token *t = peek(ts);
@@ -153,6 +157,8 @@ static Node *parse_if(TokenStream *ts){
 
     Node *then_body = parse_block(ts);
 
+    while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
+
     Node *else_body = NULL;
 
     if (peek(ts) -> type == TOKEN_ELSE){
@@ -228,65 +234,53 @@ static Node* parse_stmt(TokenStream *ts){
     while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
 }
 
+static int is_stmt_start(TokenType tt) {
+    return (tt == TOKEN_IF || tt == TOKEN_WHILE ||
+            tt == TOKEN_RETURN || tt == TOKEN_PRINT ||
+            tt == TOKEN_IDENT);
+}
+
 static Node *parse_block(TokenStream *ts){
     Node *first = NULL;
-    Node *last = NULL;
+    Node *last  = NULL;
 
-    // zjedz puste linie
-    while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
+    skip_newlines(ts);
 
-    // jeśli mamy INDENT -> to jest prawdziwy blok wcięty (python style)
-    if (peek(ts)->type == TOKEN_INDENT) {
-        advance(ts); // consume INDENT
+    expect(ts, TOKEN_INDENT, "expected INDENT to start block");
+    skip_newlines(ts);
 
-        while (1) {
-            TokenType tt = peek(ts)->type;
+    while (1) {
+        TokenType tt = peek(ts)->type;
 
-            // koniec wciętego bloku
-            if (tt == TOKEN_DEDENT) {
-                advance(ts); // consume DEDENT
-                break;
-            }
-
-            // bezpieczeństwo
-            if (tt == TOKEN_EOF) break;
-
-            // pomijaj puste linie w środku bloku
-            if (tt == TOKEN_NEWLINE) {
-                advance(ts);
-                continue;
-            }
-
-            Node *stmt = parse_stmt(ts);
-            if (!first) first = stmt;
-            else last->next = stmt;
-            last = stmt;
-
-            while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
+        // koniec bloku
+        if (tt == TOKEN_DEDENT) break;
+        if (tt == TOKEN_EOF) {
+            fprintf(stderr, "Syntax error: unexpected EOF inside block (missing DEDENT)\n");
+            exit(1);
         }
 
-        return new_block(first);
-    }
+        // puste linie wewnątrz bloku
+        if (tt == TOKEN_NEWLINE) {
+            advance(ts);
+            continue;
+        }
 
-    // fallback: stary tryb (bez indentów) – zostawiamy dla kompatybilności
-    while (1){
-        TokenType tt = peek(ts)->type;
-        if (tt == TOKEN_ELSE || tt == TOKEN_EOF) break;
-
-        if (!(tt == TOKEN_IF || tt == TOKEN_WHILE ||
-              tt == TOKEN_RETURN || tt == TOKEN_PRINT ||
-              tt == TOKEN_IDENT)) {
-            break;
+        if (!is_stmt_start(tt)) {
+            fprintf(stderr, "Parser error: unexpected token %s inside block\n", token_type_name(tt));
+            exit(1);
         }
 
         Node *stmt = parse_stmt(ts);
 
-        if (!first) first = stmt; else last->next = stmt;
+        if (!first) first = stmt;
+        else last->next = stmt;
         last = stmt;
 
-        while (peek(ts)->type == TOKEN_NEWLINE) advance(ts);
+        // po statement mogą być newliny
+        skip_newlines(ts);
     }
 
+    expect(ts, TOKEN_DEDENT, "expected DEDENT to end block");
     return new_block(first);
 }
 
