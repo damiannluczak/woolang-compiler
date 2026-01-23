@@ -7,4 +7,5 @@
 // generacje programu out 
 void gen_program(Node *root, FILE *out);
 
+
 #endif

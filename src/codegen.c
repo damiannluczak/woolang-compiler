@@ -1,16 +1,95 @@
 #include <stdio.h>
+#include <string.h>
 #include "codegen.h"
+
+#define VAR_MAX 128
+#define VAR_NAME_MAX 64
+
+typedef struct {
+   char names[VAR_MAX][VAR_NAME_MAX];
+   int count;
+} VarList;
 
 // forward declarations
 static void gen_node(Node *n, FILE *out, int indent);
 static void gen_indent(FILE *out, int indent);
 static void gen_expr(Node *n, FILE *out);
 
+static int var_exists(VarList *vars, const char *name);
+static void collect_vars(Node *n, VarList *vars);
+
+
+
+static int var_exists(VarList *vars, const char *name){
+    for (int i = 0; i < vars->count; i++){
+        if (strcmp(vars->names[i], name) == 0) 
+            return 1;
+    }
+    return 0;
+}
+static void collect_vars(Node *n, VarList *vars){
+    if (!n) return;
+    
+    switch (n->type){
+
+        case NODE_ASSIGN: {
+            if (n->left && n->left->type == NODE_IDENT){
+                if (!var_exists(vars, n->left->name)) {
+                    strncpy(vars->names[vars->count], n->left->name, VAR_NAME_MAX - 1);
+                    vars->names[vars->count][VAR_NAME_MAX - 1] = '\0';
+                    vars->count++;
+                }
+            }
+            collect_vars(n->right, vars);
+            break;
+        }
+        case NODE_BLOCK: {
+            Node *cur = n->body;
+            while (cur){
+                collect_vars(cur, vars);
+                cur = cur->next;
+            }
+            break;
+        }
+        case NODE_IF :{
+            collect_vars(n->body, vars);
+            collect_vars(n->cond, vars);
+            collect_vars(n->else_body, vars);
+            break;
+        }
+        case NODE_WHILE: {
+            collect_vars(n->cond, vars);
+            collect_vars(n->body, vars);
+            break;
+        }
+        case NODE_PRINT:
+        case NODE_RETURN: {
+            collect_vars(n->body, vars);
+            break;
+        }
+        case NODE_BINOP: {
+            collect_vars(n->left, vars);
+            collect_vars(n->right, vars);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 void gen_program(Node *root, FILE *out) {
+    
     fprintf(out, "#include <stdio.h>\n\n");
     fprintf(out, "int main() {\n");
 
-    // TODO: deklaracje zmiennych (opcjonalnie, na razie pomijamy)
+    // 1 pass zebranie zmiennych do deklaracji
+    VarList vars = {0};
+    collect_vars(root, &vars);
+
+    for (int i = 0; i < vars.count; i ++){
+        gen_indent(out, 1);
+        fprintf(out, " int %s;\n", vars.names[i]);
+    }
 
     gen_node(root, out, 1);
 

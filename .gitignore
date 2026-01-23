@@ -1,4 +1,23 @@
-/playground 
+# ===== binaria =====
 main
+out
 *.o
-/tests/lexer/tmp
+*.a
+
+# ===== build / generated =====
+_build/
+tests/_build/
+
+# ===== codegen outputs =====
+out.c
+
+# ===== playground / scratch =====
+playground/
+
+# ===== tmp / editor =====
+*.swp
+*.swo
+*.DS_Store
+
+# ===== lexer / parser tmp =====
+tests/lexer/tmp_build/
