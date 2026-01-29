@@ -30,15 +30,14 @@ Node *new_binop(TokenType op, Node *l, Node *r) {
     return n;
 }
 
-Node *new_assign(Node *lhs, Node *rhs){
+Node *new_assign(Node *lhs, Node *rhs) {
     Node *n = node_alloc(NODE_ASSIGN);
-
     n->left = lhs;
     n->right = rhs;
     return n;
 }
 
-Node *new_if(Node *cond, Node *body, Node *else_body){
+Node *new_if(Node *cond, Node *body, Node *else_body) {
     Node *n = node_alloc(NODE_IF);
     n->cond = cond;
     n->body = body;
@@ -46,28 +45,53 @@ Node *new_if(Node *cond, Node *body, Node *else_body){
     return n;
 }
 
-Node *new_while(Node *cond, Node *body){
+Node *new_while(Node *cond, Node *body) {
     Node *n = node_alloc(NODE_WHILE);
     n->cond = cond;
     n->body = body;
     return n;
 }
 
-Node *new_block(Node *first_stmt){
+Node *new_block(Node *first_stmt) {
     Node *n = node_alloc(NODE_BLOCK);
     n->body = first_stmt;
     return n;
 }
 
-Node *new_return(Node *expr){
+Node *new_return(Node *expr) {
     Node *n = node_alloc(NODE_RETURN);
     n->body = expr;
     return n;
 }
 
-Node * new_print(Node *expr){
+Node *new_print(Node *expr) {
     Node *n = node_alloc(NODE_PRINT);
     n->body = expr;
     return n;
 }
 
+Node *new_call(const char *fn_name, Node *args_first) {
+    Node *n = node_alloc(NODE_CALL);
+
+    strncpy(n->name, fn_name, sizeof(n->name) - 1);
+    n->name[sizeof(n->name) - 1] = '\0';
+
+    n->body = args_first;  // args as linked list via next
+    return n;
+}
+
+Node *new_funcdef(const char *fn_name, char params[][64], int param_count, Node *body) {
+    Node *n = node_alloc(NODE_FUNCDEF);
+
+    strncpy(n->name, fn_name, sizeof(n->name) - 1);
+    n->name[sizeof(n->name) - 1] = '\0';
+
+    n->param_count = param_count;
+    for (int i = 0; i < param_count && i < 32; i++) {
+        strncpy(n->params[i], params[i], 63);
+        n->params[i][63] = '\0';
+    }
+
+    n->body = body; // function body block node
+    return n;
+}

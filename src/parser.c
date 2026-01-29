@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "parser.h"
 #include "ast.h"
 
@@ -37,6 +38,10 @@ static const char *token_type_name(TokenType t){
         case TOKEN_UNKNOWN: return "UNKNOWN";
         case TOKEN_ERROR: return "ERROR";
         case TOKEN_EOF: return "EOF";
+        case TOKEN_FN: return "FN";
+        case TOKEN_TRUE: return "TRUE";
+        case TOKEN_FALSE: return "FALSE";
+        case TOKEN_PERCENT: return "PERCENT";
         default: return "???";
     }
 }
@@ -52,6 +57,8 @@ static Node *parse_if(TokenStream *ts);
 static Node *parse_block(TokenStream *ts);
 static Node *parse_stmt(TokenStream *ts);
 static Node *parse_while(TokenStream *ts);
+
+static Node *parse_fn(TokenStream *ts);
 
 static Token EOF_TOKEN = { .type = TOKEN_EOF,  .text = "EOF"};
 
@@ -87,10 +94,50 @@ static Token *expect(TokenStream *ts, TokenType type, const char *msg){
 static Node *parse_atom(TokenStream *ts){
     Token *t = peek(ts);
 
-    if (t->type == TOKEN_IDENT){
+    // true/false jako 1/0 (MVP bool)
+    if (t->type == TOKEN_TRUE){
         advance(ts);
-        return new_ident(t->text);
+        return new_literal(1);
     }
+    if (t->type == TOKEN_FALSE){
+        advance(ts);
+        return new_literal(0);
+    }
+
+    // IDENT albo CALL
+    if (t->type == TOKEN_IDENT){
+        Token *id = advance(ts);
+
+        // call: ident(...)
+        if (peek(ts)->type == TOKEN_LPAREN) {
+            advance(ts); // '('
+
+            Node *first_arg = NULL;
+            Node *last_arg  = NULL;
+
+            if (peek(ts)->type != TOKEN_RPAREN) {
+                while (1) {
+                    Node *arg = parse_expr(ts);
+
+                    if (!first_arg) first_arg = arg;
+                    else last_arg->next = arg;
+                    last_arg = arg;
+
+                    if (peek(ts)->type == TOKEN_COMMA) {
+                        advance(ts);
+                        continue;
+                    }
+                    break;
+                }
+            }
+
+            expect(ts, TOKEN_RPAREN, "expected ')' after call args");
+            return new_call(id->text, first_arg); // UWAGA: musisz mieć NODE_CALL + new_call()
+        }
+
+        return new_ident(id->text);
+    }
+
     if (t->type == TOKEN_NUMBER){
         int value = atoi(t->text);
         advance(ts);
@@ -99,27 +146,52 @@ static Node *parse_atom(TokenStream *ts){
 
     if (t->type == TOKEN_LPAREN){
         advance(ts);
-        Node * expr = parse_expr(ts);
+        Node *expr = parse_expr(ts);
         expect(ts, TOKEN_RPAREN, "expected ')' after expression");
         return expr;
     }
+    if (t->type == TOKEN_TRUE) {
+    advance(ts);
+    return new_literal(1);
+    }
+    if (t->type == TOKEN_FALSE) {
+        advance(ts);
+        return new_literal(0);
+    }
 
-    fprintf(stderr, "Syntax error: expected IDENT/NUMBER/(...) \n");
+    fprintf(stderr, "Syntax error: expected IDENT/NUMBER/true/false/(...) \n");
     fprintf(stderr, "Got token: %s\n", token_type_name(t->type));
     exit(1);
 }
-
-
-static Node *parse_add(TokenStream * ts){
+static Node *parse_term(TokenStream *ts){
     Node *left = parse_atom(ts);
+
+    while (1) {
+        TokenType op = peek(ts)->type;
+
+        if (op == TOKEN_SLASH || op == TOKEN_PERCENT) {
+            advance(ts);
+            Node *right = parse_atom(ts);
+            left = new_binop(op, left, right);
+        } else {
+            break;
+        }
+    }
+
+    return left;
+}
+
+
+static Node *parse_add(TokenStream *ts){
+    Node *left = parse_term(ts);
+
     while (1){
         TokenType op = peek(ts)->type;
 
         if (op == TOKEN_PLUS || op == TOKEN_MINUS){
             advance(ts);
-            Node *right = parse_atom(ts);
+            Node *right = parse_term(ts);
             left = new_binop(op, left, right);
-
         } else{
             break;
         }
@@ -181,12 +253,48 @@ static Node *parse_while(TokenStream *ts){
     return new_while(cond,body);
 }
 
+static Node *parse_fn(TokenStream *ts){
+    expect(ts, TOKEN_FN, "expected 'fn'");
+
+    Token *name = expect(ts, TOKEN_IDENT, "expected function name after 'fn'");
+    expect(ts, TOKEN_LPAREN, "expected '(' after function name");
+
+    // params: IDENT (, IDENT)*
+    char params[32][64];
+    int param_count = 0;
+
+    if (peek(ts)->type != TOKEN_RPAREN) {
+        while (1) {
+            Token *p = expect(ts, TOKEN_IDENT, "expected param name");
+            strncpy(params[param_count], p->text, 63);
+            params[param_count][63] = '\0';
+            param_count++;
+
+            if (peek(ts)->type == TOKEN_COMMA) {
+                advance(ts);
+                continue;
+            }
+            break;
+        }
+    }
+
+    expect(ts, TOKEN_RPAREN, "expected ')'");
+    expect(ts, TOKEN_COLON, "expected ':' after fn signature");
+    expect(ts, TOKEN_NEWLINE, "expected newline after ':'");
+
+    Node *body = parse_block(ts);
+
+    return new_funcdef(name->text, params, param_count, body); // musisz mieć NODE_FUNCDEF + new_funcdef()
+}
+
 
 
 static Node* parse_stmt(TokenStream *ts){
     Token *t = peek(ts);
 
     switch (t->type){
+        case TOKEN_FN:
+            return parse_fn(ts);
         case TOKEN_IF:
             return parse_if(ts);
 
@@ -237,7 +345,7 @@ static Node* parse_stmt(TokenStream *ts){
 static int is_stmt_start(TokenType tt) {
     return (tt == TOKEN_IF || tt == TOKEN_WHILE ||
             tt == TOKEN_RETURN || tt == TOKEN_PRINT ||
-            tt == TOKEN_IDENT);
+            tt == TOKEN_IDENT || tt == TOKEN_FN);
 }
 
 static Node *parse_block(TokenStream *ts){

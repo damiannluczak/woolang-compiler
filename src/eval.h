@@ -1,13 +1,12 @@
 #ifndef EVAL_H
 #define EVAL_H
 
-#include "env.h"
 #include "ast.h"
+#include "env.h"
 
-
-typedef struct  {
+typedef struct {
     int value;
-    int has_return;
+    int is_return;   // 1 jeśli trafiliśmy na return w aktualnym wykonaniu
 } EvalResult;
 
 EvalResult eval(Node *n, Env *env);

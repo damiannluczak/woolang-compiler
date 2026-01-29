@@ -29,6 +29,7 @@ typedef enum {
     TOKEN_SLASH,
     TOKEN_COMMA,
     TOKEN_DOT,
+    TOKEN_PERCENT,
 
     TOKEN_EQ,
     TOKEN_EQEQ,
@@ -37,8 +38,12 @@ typedef enum {
     TOKEN_LT,
     TOKEN_GE,
     TOKEN_GT,
+    TOKEN_TRUE,
+    TOKEN_FALSE,
 
     TOKEN_NEQ,
+
+    TOKEN_FN,
     
     TOKEN_UNKNOWN,
     TOKEN_ERROR,

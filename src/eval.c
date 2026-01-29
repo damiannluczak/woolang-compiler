@@ -1,148 +1,186 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "eval.h"
+#include "lexer.h"   // TokenType
 
-EvalResult eval(Node *n, Env *env){
-    EvalResult res;
-    res.value = 0;
-    res.has_return = 0;
+static EvalResult ok(int v){ return (EvalResult){ .value = v, .is_return = 0 }; }
+static EvalResult ret(int v){ return (EvalResult){ .value = v, .is_return = 1 }; }
 
-    if (!n) return res;
+static int eval_binop(TokenType op, int a, int b){
+    switch (op){
+        case TOKEN_PLUS:  return a + b;
+        case TOKEN_MINUS: return a - b;
+        case TOKEN_SLASH: return b == 0 ? 0 : (a / b);
+        case TOKEN_PERCENT: return b == 0 ? 0 : (a % b);
+
+        case TOKEN_LT:   return a <  b;
+        case TOKEN_LE:   return a <= b;
+        case TOKEN_GT:   return a >  b;
+        case TOKEN_GE:   return a >= b;
+        case TOKEN_EQEQ: return a == b;
+        case TOKEN_NEQ:  return a != b;
+
+        default:
+            fprintf(stderr, "eval_binop: unsupported op %d\n", op);
+            exit(1);
+    }
+}
+
+static EvalResult eval_node(Node *n, Env *env);
+
+static EvalResult eval_block(Node *block, Env *env){
+    // block->type == NODE_BLOCK
+    Node *cur = block->body;
+    while (cur){
+        EvalResult r = eval_node(cur, env);
+        if (r.is_return) return r;
+        cur = cur->next;
+    }
+    return ok(0);
+}
+
+static EvalResult eval_call(Node *call, Env *env){
+    // call->type == NODE_CALL
+    Node *fn_def = NULL;
+    if (!env_get_func(env, call->name, &fn_def) || !fn_def){
+        fprintf(stderr, "eval: unknown function '%s'\n", call->name);
+        exit(1);
+    }
+
+    // policz argumenty i oceń je
+    int arg_vals[32];
+    int argc = 0;
+    Node *arg = call->body; // lista argumentów po next
+    while (arg){
+        if (argc >= 32){
+            fprintf(stderr, "eval: too many args in call '%s'\n", call->name);
+            exit(1);
+        }
+        EvalResult ar = eval_node(arg, env);
+        if (ar.is_return){
+            // return wewnątrz wyrażenia jako argument nie powinien wystąpić,
+            // ale jak wystąpi to propagujemy (bezpiecznie)
+            return ar;
+        }
+        arg_vals[argc++] = ar.value;
+        arg = arg->next;
+    }
+
+    if (argc != fn_def->param_count){
+        fprintf(stderr, "eval: function '%s' expects %d args, got %d\n",
+                fn_def->name, fn_def->param_count, argc);
+        exit(1);
+    }
+
+    // nowy lokalny scope
+    Env local;
+    env_init(&local);
+    local.parent = env;
+
+    // bind parametrów
+    for (int i = 0; i < fn_def->param_count; i++){
+        env_set(&local, fn_def->params[i], arg_vals[i]);
+    }
+
+    // wykonaj body funkcji
+    EvalResult br = eval_node(fn_def->body, &local);
+
+    // return z funkcji → zwracamy wartość, ale nie propagujemy flagi return na zewnątrz wywołania
+    if (br.is_return) return ok(br.value);
+
+    // brak return w funkcji → MVP: 0
+    return ok(0);
+}
+
+static EvalResult eval_node(Node *n, Env *env){
+    if (!n) return ok(0);
 
     switch (n->type){
         case NODE_LITERAL:
-            res.value = n->int_value;
-            return res;
+            return ok(n->int_value);
 
-        case NODE_IDENT:
-            if(!env_get(env, n->name, &res.value)){
-                fprintf(stderr, "eval: undefined var '%s'\n", n->name);
+        case NODE_IDENT: {
+            int v;
+            if (!env_get(env, n->name, &v)){
+                fprintf(stderr, "eval: undefined variable '%s'\n", n->name);
                 exit(1);
             }
-            return res;
+            return ok(v);
+        }
 
         case NODE_ASSIGN: {
-            EvalResult rhs = eval(n->right, env);
-            if (rhs.has_return) return rhs;
-
+            // lhs ident
             if (!n->left || n->left->type != NODE_IDENT){
-                fprintf(stderr, "eval: left side of assignment must be identifier\n");
+                fprintf(stderr, "eval: assign lhs not ident\n");
                 exit(1);
             }
-            env_set(env, n->left->name, rhs.value);
-
-            res.value = rhs.value;
-            return res;
+            EvalResult r = eval_node(n->right, env);
+            if (r.is_return) return r;
+            env_set(env, n->left->name, r.value);
+            return ok(r.value);
         }
+
         case NODE_BINOP: {
-            EvalResult lhs = eval(n->left,  env);
-            if (lhs.has_return) return lhs;
-
-            EvalResult rhs = eval(n->right, env);
-            if (rhs.has_return) return rhs;
-
-            switch (n->op){
-                case TOKEN_PLUS:
-                    res.value = lhs.value + rhs.value;
-                    return res;
-
-                case TOKEN_MINUS:
-                    res.value = lhs.value - rhs.value;
-                    return res;
-                case TOKEN_LT:
-                    res.value = (lhs.value < rhs.value);
-                    return res;
-                case TOKEN_LE:
-                    res.value = (lhs.value <= rhs.value);
-                    return res;
-                case TOKEN_GT:
-                    res.value = (lhs.value > rhs.value);
-                    return res;
-                case TOKEN_GE:
-                    res.value = (lhs.value >= rhs.value);
-                    return res;
-                case TOKEN_EQEQ:
-                    res.value = (lhs.value == rhs.value);
-                    return res;
-                case TOKEN_NEQ:
-                    res.value = (lhs.value != rhs.value);
-                    return res;
-                default:
-                    fprintf(stderr, "eval: unsupported binop token %d\n", n->op);
-                    exit(1);
-            }
-            return res;
-        }
-
-        case NODE_BLOCK: {
-            Node *cur = n->body;
-            
-            EvalResult last;
-            last.value = 0;
-            last.has_return = 0;
-
-            while(cur) {
-                 last = eval(cur, env);
-                if (last.has_return) return last;
-                cur = cur->next;
-           }
-           return last;
-        }
-        case NODE_IF: {
-            EvalResult c = eval(n->cond, env);
-            if (c.has_return) return c;
-
-            if (c.value) {
-                EvalResult then_res = eval(n->body,env);
-                return then_res;
-
-            } 
-            if (n->else_body){
-                EvalResult else_res = eval(n->else_body,env);
-                return else_res;
-            }
-            return res;
-        }
-        
-        case NODE_WHILE: {
-            EvalResult last;
-            last.value = 0;
-            last.has_return = 0;
-
-            while(1){
-                EvalResult cond = eval(n->cond, env);
-                if (cond.has_return) return cond;
-
-                if (cond.value == 0){
-                    return last;
-                }
-                last = eval(n->body, env);
-                if (last.has_return) return last;
-            }
+            EvalResult a = eval_node(n->left, env);
+            if (a.is_return) return a;
+            EvalResult b = eval_node(n->right, env);
+            if (b.is_return) return b;
+            return ok(eval_binop(n->op, a.value, b.value));
         }
 
         case NODE_PRINT: {
-            EvalResult v = eval(n->body, env);
-            if (v.has_return) return v;
-
-            printf("%d\n", v.value);
-
-            res.value = v.value;
-            return res;
+            EvalResult r = eval_node(n->body, env);
+            if (r.is_return) return r;
+            printf("%d\n", r.value);
+            return ok(r.value);
         }
 
         case NODE_RETURN: {
-            EvalResult v = eval(n->body, env);
-            v.has_return = 1;
-            return v;
+            EvalResult r = eval_node(n->body, env);
+            // return zawsze zamyka wykonanie
+            return ret(r.value);
         }
 
+        case NODE_IF: {
+            EvalResult c = eval_node(n->cond, env);
+            if (c.is_return) return c;
+            if (c.value){
+                return eval_node(n->body, env);
+            } else if (n->else_body){
+                return eval_node(n->else_body, env);
+            }
+            return ok(0);
+        }
 
+        case NODE_WHILE: {
+            while (1){
+                EvalResult c = eval_node(n->cond, env);
+                if (c.is_return) return c;
+                if (!c.value) break;
 
+                EvalResult b = eval_node(n->body, env);
+                if (b.is_return) return b;
+            }
+            return ok(0);
+        }
+
+        case NODE_BLOCK:
+            return eval_block(n, env);
+
+        case NODE_FUNCDEF:
+            // definicja – zapisujemy do env, nie wykonujemy
+            env_set_func(env, n);
+            return ok(0);
+
+        case NODE_CALL:
+            return eval_call(n, env);
 
         default:
             fprintf(stderr, "eval: unsupported node type %d\n", n->type);
             exit(1);
     }
-    return res;
+}
+
+EvalResult eval(Node *n, Env *env){
+    return eval_node(n, env);
 }
