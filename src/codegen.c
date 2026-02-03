@@ -145,6 +145,7 @@ static void collect_vars_in_func(Node *n, VarList *locals, const ParamList *ps, 
             collect_vars_in_func(n->body, locals, ps, globals);
             break;
 
+
         case NODE_BINOP:
             collect_vars_in_func(n->left, locals, ps, globals);
             collect_vars_in_func(n->right, locals, ps, globals);
@@ -303,6 +304,15 @@ static void gen_node(Node *n, FILE *out, int indent, int *has_return) {
             gen_expr(n->body, out);
             fprintf(out, ";\n");
             break;
+        case NODE_BREAK:
+            gen_indent(out, indent);
+            fprintf(out, "break;\n");
+            break;
+
+        case NODE_CONTINUE:
+            gen_indent(out, indent);
+            fprintf(out, "continue;\n");
+            break;    
 
         case NODE_IF:
             gen_indent(out, indent);

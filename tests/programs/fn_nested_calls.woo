@@ -1,0 +1,7 @@
+fn inc(a):
+    return a + 1
+
+fn add2(x):
+    return inc(inc(x))
+
+return add2(10)

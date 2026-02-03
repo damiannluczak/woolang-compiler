@@ -16,6 +16,8 @@ static const char* node_type_name(NodeType t) {
         case NODE_IDENT: return "IDENT";
         case NODE_BLOCK: return "BLOCK";
         case NODE_RETURN: return "RETURN";
+        case NODE_BREAK: return "BREAK";
+        case NODE_CONTINUE: return "CONTINUE";
         case NODE_PRINT: return "PRINT";
         case NODE_CALL: return "CALL";
         case NODE_FUNCDEF: return "FUNCDEF";

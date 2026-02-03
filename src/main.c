@@ -28,20 +28,19 @@ int main(int argc, char **argv){
         .pos    = 0
     };
 
-
     /* ===== PARSER ===== */
     Node *root = parse_program(&ts);
 
     /* ===== AST PRINT ===== */
     if (strcmp(mode, "--ast") == 0) {
         ast_print(root, 0);
-        return 0;
+        return 0; // IMPORTANT: nie lecimy dalej
     }
 
     /* ===== CODEGEN ===== */
     if (strcmp(mode, "--emit-c") == 0) {
         gen_program(root, stdout);
-        return 0;
+        return 0; // IMPORTANT: nie wolno odpalać eval po codegen
     }
 
     /* ===== EVAL (default) ===== */
@@ -50,6 +49,7 @@ int main(int argc, char **argv){
 
     EvalResult r = eval(root, &env);
 
+    // eval może wypisywać PRINT-y, a na końcu wynik programu:
     printf("Program result = %d\n", r.value);
     return r.value;
 }

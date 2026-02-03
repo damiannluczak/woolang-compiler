@@ -11,6 +11,8 @@ static const char *token_type_name(TokenType t){
         case TOKEN_WHILE: return "WHILE";
         case TOKEN_PRINT: return "PRINT";
         case TOKEN_RETURN: return "RETURN";
+        case TOKEN_BREAK: return "BREAK";
+        case TOKEN_CONTINUE: return "CONTINUW";
         case TOKEN_IDENT: return "IDENT";
         case TOKEN_NUMBER: return "NUMBER";
         case TOKEN_NEWLINE: return "NEWLINE";
@@ -304,6 +306,15 @@ static Node* parse_stmt(TokenStream *ts){
             return new_return(expr);
         }
 
+        case TOKEN_BREAK: {
+            expect(ts, TOKEN_BREAK, "expected 'break'");
+            return new_break();
+        }
+        case TOKEN_CONTINUE: {
+            expect(ts, TOKEN_CONTINUE, "expected 'continue'");
+            return new_continue();
+        }
+
         case TOKEN_PRINT: {
             expect(ts, TOKEN_PRINT, "expected 'print'");
             Node *expr = parse_expr(ts);
@@ -345,7 +356,8 @@ static Node* parse_stmt(TokenStream *ts){
 static int is_stmt_start(TokenType tt) {
     return (tt == TOKEN_IF || tt == TOKEN_WHILE ||
             tt == TOKEN_RETURN || tt == TOKEN_PRINT ||
-            tt == TOKEN_IDENT || tt == TOKEN_FN);
+            tt == TOKEN_IDENT || tt == TOKEN_FN || 
+            tt == TOKEN_BREAK || tt == TOKEN_CONTINUE);
 }
 
 static Node *parse_block(TokenStream *ts){

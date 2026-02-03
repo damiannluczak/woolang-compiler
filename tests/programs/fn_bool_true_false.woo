@@ -1,0 +1,13 @@
+fn t():
+    return true
+
+fn f():
+    return false
+
+if t():
+    if f():
+        return 0
+    else:
+        return 7
+
+return 1

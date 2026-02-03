@@ -1,10 +1,22 @@
+// src/eval.c
 #include <stdio.h>
 #include <stdlib.h>
 #include "eval.h"
 #include "lexer.h"   // TokenType
 
-static EvalResult ok(int v){ return (EvalResult){ .value = v, .is_return = 0 }; }
-static EvalResult ret(int v){ return (EvalResult){ .value = v, .is_return = 1 }; }
+// helpers: zawsze zerujemy wszystkie flagi
+static EvalResult ok(int v){
+    return (EvalResult){ .value = v, .is_return = 0, .is_break = 0, .is_continue = 0 };
+}
+static EvalResult ret(int v){
+    return (EvalResult){ .value = v, .is_return = 1, .is_break = 0, .is_continue = 0 };
+}
+static EvalResult brk(void){
+    return (EvalResult){ .value = 0, .is_return = 0, .is_break = 1, .is_continue = 0 };
+}
+static EvalResult cont(void){
+    return (EvalResult){ .value = 0, .is_return = 0, .is_break = 0, .is_continue = 1 };
+}
 
 static int eval_binop(TokenType op, int a, int b){
     switch (op){
@@ -33,7 +45,8 @@ static EvalResult eval_block(Node *block, Env *env){
     Node *cur = block->body;
     while (cur){
         EvalResult r = eval_node(cur, env);
-        if (r.is_return) return r;
+        // propaguj return/break/continue do góry
+        if (r.is_return || r.is_break || r.is_continue) return r;
         cur = cur->next;
     }
     return ok(0);
@@ -56,12 +69,11 @@ static EvalResult eval_call(Node *call, Env *env){
             fprintf(stderr, "eval: too many args in call '%s'\n", call->name);
             exit(1);
         }
+
         EvalResult ar = eval_node(arg, env);
-        if (ar.is_return){
-            // return wewnątrz wyrażenia jako argument nie powinien wystąpić,
-            // ale jak wystąpi to propagujemy (bezpiecznie)
-            return ar;
-        }
+        // jeśli w arg pojawi się return/break/continue -> propaguj (bezpiecznie)
+        if (ar.is_return || ar.is_break || ar.is_continue) return ar;
+
         arg_vals[argc++] = ar.value;
         arg = arg->next;
     }
@@ -85,8 +97,14 @@ static EvalResult eval_call(Node *call, Env *env){
     // wykonaj body funkcji
     EvalResult br = eval_node(fn_def->body, &local);
 
-    // return z funkcji → zwracamy wartość, ale nie propagujemy flagi return na zewnątrz wywołania
+    // return z funkcji → zwracamy wartość, ale NIE propagujemy flagi return poza call
     if (br.is_return) return ok(br.value);
+
+    // break/continue nie powinny wychodzić poza funkcję (jeśli wyszły -> błąd logiki programu)
+    if (br.is_break || br.is_continue){
+        fprintf(stderr, "eval: break/continue escaped function '%s'\n", call->name);
+        exit(1);
+    }
 
     // brak return w funkcji → MVP: 0
     return ok(0);
@@ -115,35 +133,50 @@ static EvalResult eval_node(Node *n, Env *env){
                 exit(1);
             }
             EvalResult r = eval_node(n->right, env);
-            if (r.is_return) return r;
+            if (r.is_return || r.is_break || r.is_continue) return r;
+
             env_set(env, n->left->name, r.value);
             return ok(r.value);
         }
 
+        case NODE_BREAK:
+            return brk();
+
+        case NODE_CONTINUE:
+            return cont();
+
         case NODE_BINOP: {
             EvalResult a = eval_node(n->left, env);
-            if (a.is_return) return a;
+            if (a.is_return || a.is_break || a.is_continue) return a;
+
             EvalResult b = eval_node(n->right, env);
-            if (b.is_return) return b;
+            if (b.is_return || b.is_break || b.is_continue) return b;
+
             return ok(eval_binop(n->op, a.value, b.value));
         }
 
         case NODE_PRINT: {
             EvalResult r = eval_node(n->body, env);
-            if (r.is_return) return r;
+            if (r.is_return || r.is_break || r.is_continue) return r;
+
             printf("%d\n", r.value);
             return ok(r.value);
         }
 
         case NODE_RETURN: {
             EvalResult r = eval_node(n->body, env);
-            // return zawsze zamyka wykonanie
+            // return zawsze zamyka wykonanie (nawet jeśli w środku był break/continue – to i tak błąd programu)
+            if (r.is_break || r.is_continue) {
+                fprintf(stderr, "eval: break/continue inside return expr\n");
+                exit(1);
+            }
             return ret(r.value);
         }
 
         case NODE_IF: {
             EvalResult c = eval_node(n->cond, env);
-            if (c.is_return) return c;
+            if (c.is_return || c.is_break || c.is_continue) return c;
+
             if (c.value){
                 return eval_node(n->body, env);
             } else if (n->else_body){
@@ -155,11 +188,13 @@ static EvalResult eval_node(Node *n, Env *env){
         case NODE_WHILE: {
             while (1){
                 EvalResult c = eval_node(n->cond, env);
-                if (c.is_return) return c;
+                if (c.is_return || c.is_break || c.is_continue) return c;
                 if (!c.value) break;
 
                 EvalResult b = eval_node(n->body, env);
                 if (b.is_return) return b;
+                if (b.is_break) break;
+                if (b.is_continue) continue;
             }
             return ok(0);
         }

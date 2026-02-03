@@ -21,3 +21,5 @@ playground/
 
 # ===== lexer / parser tmp =====
 tests/lexer/tmp_build/
+# build artifacts
+main

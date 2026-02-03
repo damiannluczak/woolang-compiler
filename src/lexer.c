@@ -24,14 +24,16 @@ static void flush_ident(Token *tokens, int *token_count, char *buf, int *len) {
 
     buf[*len] = '\0';
 
-    if (strcmp(buf, "fn") == 0)          push_token(tokens, token_count, TOKEN_FN, "");
-    else if (strcmp(buf, "if") == 0)     push_token(tokens, token_count, TOKEN_IF, "");
-    else if (strcmp(buf, "else") == 0)   push_token(tokens, token_count, TOKEN_ELSE, "");
-    else if (strcmp(buf, "while") == 0)  push_token(tokens, token_count, TOKEN_WHILE, "");
-    else if (strcmp(buf, "print") == 0)  push_token(tokens, token_count, TOKEN_PRINT, "");
-    else if (strcmp(buf, "return") == 0) push_token(tokens, token_count, TOKEN_RETURN, "");
-    else if (strcmp(buf, "true") == 0)   push_token(tokens, token_count, TOKEN_TRUE, "");
-    else if (strcmp(buf, "false") == 0)  push_token(tokens, token_count, TOKEN_FALSE, "");
+    if (strcmp(buf, "fn") == 0)            push_token(tokens, token_count, TOKEN_FN, "");
+    else if (strcmp(buf, "if") == 0)       push_token(tokens, token_count, TOKEN_IF, "");
+    else if (strcmp(buf, "else") == 0)     push_token(tokens, token_count, TOKEN_ELSE, "");
+    else if (strcmp(buf, "while") == 0)    push_token(tokens, token_count, TOKEN_WHILE, "");
+    else if (strcmp(buf, "print") == 0)    push_token(tokens, token_count, TOKEN_PRINT, "");
+    else if (strcmp(buf, "return") == 0)   push_token(tokens, token_count, TOKEN_RETURN, "");
+    else if (strcmp(buf, "break") == 0)    push_token(tokens, token_count, TOKEN_BREAK, "");
+    else if (strcmp(buf, "continue") == 0) push_token(tokens,token_count, TOKEN_CONTINUE, "");
+    else if (strcmp(buf, "true") == 0)     push_token(tokens, token_count, TOKEN_TRUE, "");
+    else if (strcmp(buf, "false") == 0)    push_token(tokens, token_count, TOKEN_FALSE, "");
     else push_token(tokens, token_count, TOKEN_IDENT, buf);
 
     *len = 0;

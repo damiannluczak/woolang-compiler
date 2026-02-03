@@ -31,8 +31,11 @@ for f in "$PROG_DIR"/*.woo; do
   out="$BUILD_DIR/$name.stdout"
   rcfile="$BUILD_DIR/$name.rc"
 
+  set +e
   "$BIN" "$f" --eval >"$out"
-  echo "$?" >"$rcfile"
+  rc=$?
+  set -e
+  echo "$rc" >"$rcfile"
 
   if diff -u "$exp_out" "$out" >/dev/null; then
     echo "  stdout: OK"

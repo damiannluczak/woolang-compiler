@@ -1,0 +1,8 @@
+fn is_even(x):
+    return x % 2 == 0
+
+x = 5
+if is_even(x):
+    return 111
+else:
+    return 222

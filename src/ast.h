@@ -12,6 +12,8 @@ typedef enum {
     NODE_IDENT,
     NODE_BLOCK,
     NODE_RETURN,
+    NODE_BREAK,
+    NODE_CONTINUE, 
     NODE_PRINT,
 
     // functions
@@ -52,6 +54,12 @@ Node *new_block(Node *first_stmt);
 
 Node *new_return(Node *expr);
 Node *new_print(Node *expr);
+
+Node *new_break(void);
+Node *new_continue(void);
+
+
+
 
 // functions
 Node *new_call(const char *fn_name, Node *args_first);

@@ -1,0 +1,7 @@
+fn gt(a, b):
+    return a > b
+
+fn both_true(a, b):
+    return gt(a, 0) == 1
+
+return both_true(5, 1)

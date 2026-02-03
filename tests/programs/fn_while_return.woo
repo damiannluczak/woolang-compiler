@@ -1,0 +1,9 @@
+fn first_gt_3():
+    x = 0
+    while x < 10:
+        x = x + 1
+        if x > 3:
+            return x
+    return 999
+
+return first_gt_3()

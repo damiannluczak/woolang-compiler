@@ -10,6 +10,10 @@ typedef enum {
     TOKEN_WHILE,
     TOKEN_PRINT,
     TOKEN_RETURN,
+
+    TOKEN_BREAK,
+    TOKEN_CONTINUE,
+
     TOKEN_IDENT,
     TOKEN_NUMBER,
 

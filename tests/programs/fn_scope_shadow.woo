@@ -1,0 +1,10 @@
+x = 5
+
+fn f(x):
+    x = x + 10
+    return x
+
+y = f(1)
+print x
+print y
+return x

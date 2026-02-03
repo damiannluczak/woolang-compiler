@@ -6,9 +6,10 @@
 
 typedef struct {
     int value;
-    int is_return;   // 1 jeśli trafiliśmy na return w aktualnym wykonaniu
+    int is_return;
+    int is_break;
+    int is_continue;
 } EvalResult;
-
 EvalResult eval(Node *n, Env *env);
 
 #endif

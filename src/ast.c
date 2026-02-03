@@ -63,6 +63,13 @@ Node *new_return(Node *expr) {
     n->body = expr;
     return n;
 }
+Node *new_break(void) {
+    return node_alloc(NODE_BREAK);
+}
+
+Node *new_continue(void) {
+    return node_alloc(NODE_CONTINUE);
+}
 
 Node *new_print(Node *expr) {
     Node *n = node_alloc(NODE_PRINT);
