@@ -1,58 +1,147 @@
-## 🐍 WooLang — Python-like language compiled to C
+# Python-like Language Compiled to C
 
 WooLang is a simple educational programming language inspired by Python,  
-designed to be compiled into pure C.  
+designed to demonstrate how compilers work by translating high-level code into C.
 
-> **Author:** Damian Łuczak  
-> **University:** Uczelnia Techniczno-Handlowa im. Heleny Chodkowskiej in Warsaw
-> **Major:** Computer Science — Software Engineering  
-> **Type of Work:** Engineering Thesis  
-
----
-
-## 🎯 Project Goal
-
-The goal of this engineering thesis is to design and implement a **compiler for a simple, custom programming language** whose syntax resembles Python, and whose output is **C source code**.
-
-The project has an **educational and practical** character — combining theoretical aspects with implementation, allowing a deeper understanding of how compilers work by creating one from scratch.
+Author: Damian Łuczak  
+University: UTH Warsaw  
+Major: Computer Science — Software Engineering  
+Project Type: Engineering Thesis  
 
 ---
 
-## 🧩 PyC Language Overview
+## Project Overview
 
-The **PyC** (Python-to-C) language has a simplified, Python-inspired syntax:
-- Indentation (`INDENT` / `DEDENT`) defines code blocks.
-- Comments: `# comment`
-- Supported statements: `if`, `elif`, `else`, `while`, `def`, `return`, `print`
-- All variables are of type `int` (in the MVP version)
-- The compiler translates `.woo` source files into equivalent C code that can be compiled with GCC.
+The goal of this project is to design and implement a complete compiler pipeline for a custom programming language.
+
+The system supports two execution modes:
+- Interpreter — executes the program directly from AST
+- Compiler (source-to-source) — translates code into C and compiles it using GCC
+
+This approach allows direct comparison between interpreted and compiled execution models.
 
 ---
 
-## 🧰 Technologies and Tools
-- Implementation language: C (C11)
+## Compiler Architecture
+
+```
+Source Code → Lexer → Parser → AST → Code Generator → C → GCC
+                                ↓
+                           Interpreter
+```
+
+### Components:
+- Lexer — tokenizes input source code
+- Parser — builds Abstract Syntax Tree (AST)
+- AST — central representation of the program
+- Interpreter (eval) — executes AST directly
+- Code Generator (codegen) — converts AST into C code
+
+---
+
+## Language Features
+
+Language supports a simplified Python-like syntax:
+
+- indentation-based blocks (INDENT / DEDENT)
+- variables (type: int)
+- arithmetic operations (+, -, *, /, %)
+- comparisons (<, >, ==, !=, etc.)
+- control flow:
+  - if, elif, else
+  - while
+- functions (def, return)
+- output (print)
+
+---
+
+## Example
+
+### .woo
+```txt
+x = 5 + 2
+print x
+```
+
+### Generated C
+```c
+int x = 0;
+
+int main() {
+    x = (5 + 2);
+    printf("%d\n", x);
+    return 0;
+}
+```
+
+---
+
+## Testing
+
+The project includes test cases for:
+- lexer
+- parser
+- execution correctness (interpreter vs compiled)
+
+---
+
+## Technologies
+
+- Language: C (C11)
 - Compiler: GCC / Clang
 - Build system: CMake
-- Version control: Git + GitHub
-- Environment: macOS (VS Code)
+- Version control: Git / GitHub
 - Testing: Bash / CTest
 
 ---
-'''
-## Project Structure 
-pyc-compiler/
-├── src/            # compiler source code
-│   ├── main.c
-├── runtime/        # small standard library (e.g., print)
-│   └── io.c
-├── tests/        # tests for woolang
-│   └── lexer/
-|   |     └── input 
-|   |     └── output 
-|   |     └── tmp 
-│   └── parser
-├── docs/           # documentation and thesis notes
-├── .gitignore
-└── README.md
-'''
+
+## Project Structure
+
+```
+woolang/
+├── src/
+│   ├── lexer.c
+│   ├── parser.c
+│   ├── ast.c
+│   ├── eval.c
+│   ├── codegen.c
+│   └── main.c
+│
+├── include/
+│   ├── lexer.h
+│   ├── parser.h
+│   ├── ast.h
+│   ├── eval.h
+│   └── codegen.h
+│
+├── tests/
+│   ├── lexer/
+│   ├── parser/
+│   ├── interpreter/
+│   └── codegen/
+│
+├── examples/
+│   └── sample.woo
+│
+├── build/
+├── CMakeLists.txt
+├── README.md
+└── .gitignore
+```
+
 ---
+
+## Future Improvements
+
+- optimization stage (middle-end)
+- additional data types (e.g., strings)
+- better error handling
+- direct machine code generation
+- performance optimizations
+
+---
+
+## Notes
+
+This project is intended for educational purposes and demonstrates  
+the fundamental concepts of compiler construction, including parsing, AST design, and code generation.
